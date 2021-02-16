@@ -4,9 +4,7 @@
     <!-- 页面meta -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>传智健康</title>
-    <meta name="description" content="传智健康">
-    <meta name="keywords" content="传智健康">
+    <title>家族人员管理系统</title>
     <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
     <!-- 引入样式 -->
     <link rel="stylesheet" href="../plugins/elementui/index.css">
@@ -27,7 +25,7 @@
             <div class="filter-container">
                 <el-input placeholder="姓名/身份证号" v-model="pagination.queryString" style="width: 200px;"></el-input>
                 <el-button @click="findPage()" class="">查询</el-button>
-                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+                <el-button type="primary" class="butT" @click="handleAddPre()">新建</el-button>
             </div>
             <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
                 <el-table-column class="tc" label="序号" type="index"></el-table-column>
@@ -35,14 +33,15 @@
                 <el-table-column class="tc" label="代数" prop="generation"></el-table-column>
                 <el-table-column class="tc" label="性别">
                     <template slot-scope="scope">
-                        <span>{{ scope.row.gender == '1' ? '不限' : scope.row.gender == '0' ? '男' : '女'}}</span>
+                        <span>{{ scope.row.gender == '0' ? '女' : '男'}}</span>
                     </template>
                 </el-table-column>
                 <el-table-column class="tc" label="职业" prop="occupation"></el-table-column>
+                <el-table-column class="tc" label="现居地" prop="currentPlace"></el-table-column>
                 <el-table-column label="操作" class="tc">
                     <template slot-scope="scope">
-                        <el-button size="mini" type="success" @click="handleUpdate(scope.row)">查看</el-button>
-                        <el-button size="mini" type="primary" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="success" @click="handleDetail(scope.row)">查看</el-button>
+                        <el-button size="mini" type="primary" @click="handleEditPre(scope.row)">编辑</el-button>
                         <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </template>
                 </el-table-column>
@@ -57,13 +56,13 @@
                         :total="pagination.total">
                 </el-pagination>
             </div>
-            <!-- 新增标签弹层 -->
-            <div class="add-form">
-                <el-dialog title="新增家庭人员" :visible.sync="dialogFormVisible">
+
+            <div class="detail">
+                <el-dialog title="详细信息" :visible.sync="dialogDetail">
                     <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right" label-width="80px">
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="姓名" prop="name">
+                                <el-form-item label="姓名" v-model="formData.name">
                                     <el-input v-model="formData.name"></el-input>
                                 </el-form-item>
                             </el-col>
@@ -76,38 +75,38 @@
                                 </el-form-item>
                             </el-col>
                             <el-col :span="5">
-                                <el-form-item label="代数" prop="generation">
+                                <el-form-item label="代数" v-model="formData.generation">
                                     <el-input v-model="formData.generation"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="身份证号" prop="card">
+                                <el-form-item label="身份证号" v-model="formData.name">
                                     <el-input v-model="formData.card"></el-input>
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="职业" prop="occupation">
+                                <el-form-item label="职业" v-model="formData.occupation">
                                     <el-input v-model="formData.occupation"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="出生地" prop="birthPlace">
+                                <el-form-item label="出生地" v-model="formData.birthPlace">
                                     <el-input v-model="formData.birthPlace" class="in"></el-input>
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="现居地" prop="currentPlace">
+                                <el-form-item label="现居地" v-model="formData.currentPlace">
                                     <el-input v-model="formData.currentPlace" class="in"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="阳历生日" prop="birthPlace">
+                                <el-form-item label="阳历生日" v-model="formData.solarBirthday">
                                     <el-date-picker
                                             v-model="formData.solarBirthday"
                                             type="datetime"
@@ -116,7 +115,79 @@
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="阴历生日" prop="birthPlace">
+                                <el-form-item label="阴历生日" v-model="formData.birthPlace">
+                                    <el-date-picker
+                                            v-model="formData.lunarBirthday"
+                                            type="datetime"
+                                            placeholder="请选择农历生日">
+                                    </el-date-picker>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                </el-dialog>
+            </div>
+
+            <!-- 新增标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增家庭人员" :visible.sync="dialogAdd">
+                    <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right" label-width="80px">
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="姓名" v-model="formData.name">
+                                    <el-input v-model="formData.name"></el-input>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="7">
+                                <el-form-item label="性别">
+                                    <el-select v-model="formData.gender">
+                                        <el-option label="男" value="1"></el-option>
+                                        <el-option label="女" value="0"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="5">
+                                <el-form-item label="代数" v-model="formData.generation">
+                                    <el-input v-model="formData.generation"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="身份证号" v-model="formData.name">
+                                    <el-input v-model="formData.card"></el-input>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="职业" v-model="formData.occupation">
+                                    <el-input v-model="formData.occupation"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="出生地" v-model="formData.birthPlace">
+                                    <el-input v-model="formData.birthPlace" class="in"></el-input>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="现居地" v-model="formData.currentPlace">
+                                    <el-input v-model="formData.currentPlace" class="in"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="阳历生日" v-model="formData.solarBirthday">
+                                    <el-date-picker
+                                            v-model="formData.solarBirthday"
+                                            type="datetime"
+                                            placeholder="请选择阳历生日">
+                                    </el-date-picker>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="阴历生日" v-model="formData.birthPlace">
                                     <el-date-picker
                                             v-model="formData.lunarBirthday"
                                             type="datetime"
@@ -127,19 +198,19 @@
                         </el-row>
                     </el-form>
                     <div slot="footer" class="dialog-footer">
-                        <el-button @click="dialogFormVisible = false">取消</el-button>
+                        <el-button @click="dialogAdd = false">取消</el-button>
                         <el-button type="primary" @click="handleAdd()">确定</el-button>
                     </div>
                 </el-dialog>
             </div>
 
             <!-- 编辑标签弹层 -->
-            <div class="add-form">
-                <el-dialog title="修改家庭人员" :visible.sync="dialogFormVisible4Edit">
+            <div class="update-form">
+                <el-dialog title="修改家庭人员" :visible.sync="dialogEdit">
                     <el-form ref="dataEditForm" :model="formData" :rules="rules" label-position="right" label-width="80px">
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="姓名" prop="name">
+                                <el-form-item label="姓名" v-model="formData.name">
                                     <el-input v-model="formData.name"></el-input>
                                 </el-form-item>
                             </el-col>
@@ -152,38 +223,38 @@
                                 </el-form-item>
                             </el-col>
                             <el-col :span="5">
-                                <el-form-item label="代数" prop="generation">
+                                <el-form-item label="代数" v-model="formData.generation">
                                     <el-input v-model="formData.generation"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="身份证号" prop="card">
+                                <el-form-item label="身份证号" v-model="formData.name">
                                     <el-input v-model="formData.card"></el-input>
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="职业" prop="occupation">
+                                <el-form-item label="职业" v-model="formData.occupation">
                                     <el-input v-model="formData.occupation"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="出生地" prop="birthPlace">
+                                <el-form-item label="出生地" v-model="formData.birthPlace">
                                     <el-input v-model="formData.birthPlace" class="in"></el-input>
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="现居地" prop="currentPlace">
+                                <el-form-item label="现居地" v-model="formData.currentPlace">
                                     <el-input v-model="formData.currentPlace" class="in"></el-input>
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
-                                <el-form-item label="阳历生日" prop="birthPlace">
+                                <el-form-item label="阳历生日" v-model="formData.solarBirthday">
                                     <el-date-picker
                                             v-model="formData.solarBirthday"
                                             type="datetime"
@@ -192,7 +263,7 @@
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item label="阴历生日" prop="birthPlace">
+                                <el-form-item label="阴历生日" v-model="formData.birthPlace">
                                     <el-date-picker
                                             v-model="formData.lunarBirthday"
                                             type="datetime"
@@ -203,7 +274,7 @@
                         </el-row>
                     </el-form>
                     <div slot="footer" class="dialog-footer">
-                        <el-button @click="dialogFormVisible4Edit = false">取消</el-button>
+                        <el-button @click="dialogEdit = false">取消</el-button>
                         <el-button type="primary" @click="handleEdit()">确定</el-button>
                     </div>
                 </el-dialog>
@@ -229,9 +300,10 @@
             },
             dataList: [],
             formData: {},
-            dialogFormVisible: false,
-            dialogFormVisible4Edit: false,
-            rules: {//校验规则
+            dialogAdd: false,
+            dialogEdit: false,
+            dialogDetail: false,
+            rules: {
                 name: [{required: true, message: '姓名为必填项', trigger: 'blur'}]
             }
         },
@@ -239,41 +311,42 @@
             this.findPage();
         },
         methods: {
-            handleEdit() {
-                this.$refs['dataEditForm'].validate((valid) => {
-                    if (valid) {
-                        //表单校验通过，可以提交数据
-                        axios.post("/modify", this.formData).then((res) => {
-                            if (res.data.flag) {
-                                this.$message({
-                                    type: 'success',
-                                    message: res.data.message
-                                });
-                            } else {
-                                //执行失败
-                                this.$message.error(res.data.message);
-                            }
-                        }).finally(() => {
-                            this.findPage();
-                            this.dialogFormVisible4Edit = false;
-                        });
-                    } else {
-                        this.$message.error("表单数据校验失败!");
-                        return false;
-                    }
+            findPage() {
+                let param = {
+                    currentPage: this.pagination.currentPage,
+                    pageSize: this.pagination.pageSize,
+                    queryString: this.pagination.queryString
+                };
+                axios.post("/list", param).then((res) => {
+                    console.log(res.data.data);
+                    //解析Controller响应回的数据，为模型数据赋值
+                    this.pagination.total = res.data.total;
+                    this.dataList = res.data.data;
                 });
+            },
+            resetForm() {
+                this.formData = {};
+            },
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.findPage();
+            },
+            handleDetail(row) {
+                this.dialogDetail = true;
+                this.formData = row;
+            },
+            handleAddPre() {
+                this.dialogAdd = true;
+                this.resetForm();
             },
             handleAdd() {
                 this.$refs['dataAddForm'].validate((valid) => {
                     if (valid) {
                         axios.post("/save", this.formData).then((res) => {
-                            this.dialogFormVisible = false;
+                            this.dialogAdd = false;
                             if (res.data.flag) {//执行成功
                                 this.findPage();
-                                this.$message({
-                                    message: res.data.message,
-                                    type: 'success'
-                                });
+                                this.$message({message: res.data.message, type: 'success'});
                             } else {
                                 this.$message.error(res.data.message);
                             }
@@ -284,47 +357,36 @@
                     }
                 });
             },
-            findPage() {
-                let param = {
-                    currentPage: this.pagination.currentPage,
-                    pageSize: this.pagination.pageSize,
-                    queryString: this.pagination.queryString
-                };
-                axios.post("/list", param).then((res) => {
-                    //解析Controller响应回的数据，为模型数据赋值
-                    this.pagination.total = res.data.total;
-                    this.dataList = res.data.data;
-                });
-            },
-            resetForm() {
-                this.formData = {};//重置数据
-            },
-            // 弹出添加窗口
-            handleCreate() {
-                //弹出新增窗口
-                this.dialogFormVisible = true;
-                this.resetForm();
-            },
-            // 弹出编辑窗口
-            handleUpdate(row) {
-                //弹出编辑窗口
-                this.dialogFormVisible4Edit = true;
+            handleEditPre(row) {
+                this.dialogEdit = true;
                 this.formData = row;
-                //回显数据，发送ajax请求根据ID查询当前检查项数据
-                // axios.get("/find/" + row.id).then((res) => {
+                // axios.get("/get/" + row.id).then((res) => {
                 //     if (res.data.flag) {
-                //         //进行回显，基于VUE的数据绑定实现
                 //         this.formData = res.data.data;
                 //     } else {
-                //         //查询失败，弹出提示
                 //         this.$message.error(res.data.message);
                 //     }
                 // });
             },
-            //切换页码
-            handleCurrentChange(currentPage) {
-                this.pagination.currentPage = currentPage;
-                this.findPage();
+            handleEdit() {
+                this.$refs['dataEditForm'].validate((valid) => {
+                    if (valid) {
+                        //表单校验通过，可以提交数据
+                        axios.post("/update", this.formData).then((res) => {
+                            if (res.data.flag) {
+                                this.$message({type: 'success', message: res.data.message});
+                            } else {
+                                this.$message.error(res.data.message);
+                            }
+                        }).finally(() => {
+                            this.findPage();
+                            this.dialogEdit = false;
+                        });
+                    } else {
+                        this.$message.error("表单数据校验失败!");
+                        return false;
+                    }
+                });
             },
             handleDelete(row) {
                 //alert(row.id);
@@ -333,10 +395,7 @@
                 }).then(() => {
                     axios.get("/remove/" + row.id).then((res) => {
                         if (res.data.flag) {
-                            this.$message({
-                                type: 'success',
-                                message: res.data.message
-                            });
+                            this.$message({type: 'success', message: res.data.message});
                             this.findPage();
                         } else {
                             this.$message.error(res.data.message);

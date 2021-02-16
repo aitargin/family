@@ -111,4 +111,7 @@ public class Family implements Serializable {
 
     private transient List<Family> children;
 
+    public void now() {
+        this.updateTime = LocalDateTime.now();
+    }
 }

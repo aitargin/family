@@ -10,7 +10,7 @@ public class R implements Serializable{
     private Boolean flag;
     private Integer code;
     private String message;
-    private Integer total;
+    private Long total;
     private Object data;
 
     private R() {
@@ -69,6 +69,11 @@ public class R implements Serializable{
      */
     public R data(Object map) {
         this.setData(map);
+        return this;
+    }
+
+    public R total(Long total) {
+        this.setTotal(total);
         return this;
     }
 
