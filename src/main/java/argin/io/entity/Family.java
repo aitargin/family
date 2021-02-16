@@ -2,10 +2,12 @@ package argin.io.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -43,7 +45,7 @@ public class Family implements Serializable {
     private String head;
 
     /**
-     * 性别：1男 2女
+     * 性别：1男 0女
      */
     private Integer gender;
 
@@ -66,6 +68,16 @@ public class Family implements Serializable {
      * 现居地
      */
     private String currentPlace;
+
+    /**
+     * 阳历生日
+     */
+    private LocalDateTime solarBirthday;
+
+    /**
+     * 阴历生日
+     */
+    private LocalDateTime lunarBirthday;
 
     /**
      * 爱人
@@ -93,19 +105,10 @@ public class Family implements Serializable {
     private Integer lmId;
 
     /**
-     * 阴历生日
-     */
-    private LocalDateTime lunarBirthday;
-
-    /**
-     * 阳历生日
-     */
-    private LocalDateTime solarBirthday;
-
-    /**
      * 更新时间
      */
     private LocalDateTime updateTime;
 
+    private transient List<Family> children;
 
 }
